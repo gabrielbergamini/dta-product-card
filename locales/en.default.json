@@ -42,6 +42,19 @@
     "password": "Password",
     "enter": "Enter"
   },
+  "products": {
+    "card": {
+      "on_sale": "On Sale!",
+      "color": "Color",
+      "regular_price": "Regular price",
+      "sale_price": "Sale price"
+    }
+  },
+  "sections": {
+    "product_grid": {
+      "empty": "No products yet. Add products to your store or pick a collection for this section."
+    }
+  },
   "search": {
     "title": "Search",
     "placeholder": "Search articles, pages, or products",

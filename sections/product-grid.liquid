@@ -1,0 +1,67 @@
+{%- liquid
+  assign grid_collection = section.settings.collection
+  if grid_collection != blank
+    assign grid_products = grid_collection.products
+  else
+    assign grid_products = collections.all.products
+  endif
+  assign limit = section.settings.products_to_show
+-%}
+
+<section class='mx-auto w-full max-w-[1360px] px-5 py-10 font-sans sm:py-14'>
+  {%- if section.settings.heading != blank -%}
+    <h2 class='mb-8 text-2xl font-medium text-ink'>{{ section.settings.heading }}</h2>
+  {%- endif -%}
+
+  <ul role='list' class='grid grid-cols-1 gap-x-5 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+    {%- for product in grid_products limit: limit -%}
+      {%- liquid
+        assign img_loading = 'lazy'
+        if forloop.index <= 4
+          assign img_loading = 'eager'
+        endif
+      -%}
+      <li class='flex'>
+        {% render 'product-card', product: product, loading: img_loading %}
+      </li>
+    {%- else -%}
+      <li class='col-span-full text-ink'>{{ 'sections.product_grid.empty' | t }}</li>
+    {%- endfor -%}
+  </ul>
+
+  {%- assign jsonld_entries = '' -%}
+  {%- for product in grid_products limit: limit -%}
+    {%- liquid
+      assign jsonld_variant = product.selected_or_first_available_variant
+      assign jsonld_price = jsonld_variant.price | money_without_currency | remove: ','
+    -%}
+    {%- capture jsonld_entry -%}
+      {"@type": "ListItem", "position": {{ forloop.index }}, "item": {"@type": "Product", "name": {{ product.title | json }}, "url": {{ request.origin | append: product.url | json }}, "brand": {"@type": "Brand", "name": {{ product.vendor | json }}}{% if product.featured_media %}, "image": {{ product.featured_media.preview_image | image_url: width: 800 | prepend: 'https:' | json }}{% endif %}, "offers": {"@type": "Offer", "price": {{ jsonld_price | json }}, "priceCurrency": {{ cart.currency.iso_code | json }}, "availability": "{% if jsonld_variant.available %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}", "url": {{ request.origin | append: jsonld_variant.url | json }}}}}
+    {%- endcapture -%}
+    {%- assign jsonld_entries = jsonld_entries | append: jsonld_entry | append: '@@SEP@@' -%}
+  {%- endfor -%}
+  <script type='application/ld+json'>
+    {"@context": "https://schema.org", "@type": "ItemList", "itemListElement": [{{ jsonld_entries | split: '@@SEP@@' | join: ',' }}]}
+  </script>
+</section>
+
+{% schema %}
+{
+  "name": "Product grid",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Products" },
+    { "type": "collection", "id": "collection", "label": "Collection" },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "label": "Products to show",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 8
+    }
+  ],
+  "presets": [{ "name": "Product grid" }]
+}
+{% endschema %}

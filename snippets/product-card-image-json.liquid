@@ -1,0 +1,23 @@
+{%- comment -%}
+  Emits a CardImage JSON object (or null) for the given media.
+  Accepts: media {Media|blank}, product {Product}
+  Part of the product-card payload contract (src/types/product.ts).
+{%- endcomment -%}
+{%- if media == blank -%}
+  null
+{%- else -%}
+  {%- assign img = media.preview_image | default: media -%}
+  {%- assign srcset_parts = '' -%}
+  {%- assign widths = '360,540,720,900,1000' | split: ',' -%}
+  {%- for width_string in widths -%}
+    {%- assign width = width_string | plus: 0 -%}
+    {%- if width <= img.width -%}
+      {%- capture srcset_part -%}{{ img | image_url: width: width }} {{ width }}w{%- endcapture -%}
+      {%- assign srcset_parts = srcset_parts | append: srcset_part | append: '@@' -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- assign srcset = srcset_parts | split: '@@' | join: ', ' -%}
+  {%- assign alt = media.alt | default: product.title -%}
+  {"src": {{ img | image_url: width: 630 | json }}, "srcset": {{ srcset | json }}, "width": {{ img.width | json }},
+  "height": {{ img.height | json }}, "alt": {{ alt | json }}}
+{%- endif -%}

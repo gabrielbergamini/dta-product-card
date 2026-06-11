@@ -17,8 +17,28 @@
       {{ settings.type_primary_font | font_url | preload_tag: as: 'font', crossorigin: 'anonymous' }}
     {% endunless %}
 
-    {% # Load and preload the critical CSS %}
-    {{ 'critical.css' | asset_url | stylesheet_tag: preload: true }}
+    {% # Load and preload the critical CSS. It goes into a cascade layer ("skeleton") declared %}
+    {% # before Tailwind's layers — otherwise its unlayered `* { margin: 0 }` reset would beat %}
+    {% # every Tailwind margin utility (unlayered styles win over layered ones). %}
+    {{ 'critical.css' | asset_url | preload_tag: as: 'style' }}
+    <style>
+      @import url('{{ 'critical.css' | asset_url }}') layer(skeleton);
+    </style>
+
+    {% # Fonts: Roboto (card text) + Libre Franklin (badge; Franklin Gothic ATF substitute). %}
+    {% # Neither family is on Shopify's font CDN, so Google Fonts is intentional here. %}
+    {% # theme-check-disable RemoteAsset %}
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link
+      rel='stylesheet'
+      href='https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400&family=Roboto:wght@400;500&display=swap'
+    >
+    {% # theme-check-enable RemoteAsset %}
+
+    {% # Vite build output (Tailwind CSS + theme TS, fixed unhashed names) %}
+    {{ 'styles.css' | asset_url | stylesheet_tag }}
+    <script src='{{ 'theme.js' | asset_url }}' type='module'></script>
 
     {% # Social, title, etc. %}
     {% render 'meta-tags' %}
@@ -29,7 +49,9 @@
   <body>
     {% sections 'header-group' %}
 
-    {{ content_for_layout }}
+    <main id='main'>
+      {{ content_for_layout }}
+    </main>
 
     {% sections 'footer-group' %}
   </body>

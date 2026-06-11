@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+/* Build output — scanning it would make `vite build --watch` retrigger itself. */
+@source not '../../assets';
+
+/* Registered so transitions can interpolate them (drive the conic sweep effects). */
+@property --sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@theme {
+  --color-ink: #111111;
+  --color-accent: #0a4874;
+  --color-sale: #ff0000;
+  --color-line: #e8e8e8;
+
+  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-badge: 'Libre Franklin', 'Franklin Gothic Medium', 'Roboto', sans-serif;
+}
+
+@layer components {
+  /* Hover/secondary-image behavior. Gated on a *visible* secondary image so
+     variants without one never fade the primary out to a blank card.
+     The secondary's resting opacity lives here (not as an `opacity-0` utility)
+     because the utilities layer would out-cascade the hover rules below. */
+  [data-primary-image],
+  [data-secondary-image] {
+    transition: opacity 200ms ease;
+  }
+
+  [data-secondary-image] {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-primary-image],
+    [data-secondary-image] {
+      transition: none;
+    }
+  }
+
+  product-card:hover .card-media:has([data-secondary-image]:not([hidden])) [data-primary-image] {
+    opacity: 0;
+  }
+
+  product-card:hover [data-secondary-image]:not([hidden]) {
+    opacity: 1;
+  }
+
+  /* Product-level badge label ("New", "Best Seller"). Display lives here (not in a
+     utility class) so the sale-badge precedence rule below can win the cascade. */
+  [data-badge-custom] {
+    display: inline-flex;
+  }
+
+  [data-badge]:not([hidden]) ~ [data-badge-custom] {
+    display: none;
+  }
+
+  /* Title link: the underline grows in from the left on hover and exits to the
+     right on leave. The background-position swap happens while the line is at
+     0%/100% width, so the anchor-side jump is never visible. box-decoration-break
+     gives each line of a wrapped title its own underline. */
+  .card-title-link {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+    box-decoration-break: clone;
+    transition: background-size 0.3s ease;
+  }
+
+  .card-title-link:hover {
+    background-size: 100% 1px;
+    background-position: 0% 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-title-link {
+      transition: none;
+    }
+  }
+
+  /* --- Entry-aware hover effects (decorative — skipped under reduced motion). ---
+     `--enter` (0deg = top, clockwise) is stamped on the swatch labels by
+     product-card.ts on pointer entry; the sweep starts at that angle. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Silvery hover ring: same geometry as the selected ring (1px at 1px
+       offset). A single soft-edged arc starts at the pointer-entry point and
+       pours around the circle in one direction; --sweep overshoots to 384deg
+       so the 24deg feathered edge closes completely — the settled state is a
+       solid, uniform ring. */
+    .swatch-dot::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 9999px;
+      pointer-events: none;
+      --sweep: 0deg;
+      background: conic-gradient(
+        from var(--enter, 0deg),
+        rgb(138 146 158 / 0.95) 0deg,
+        rgb(138 146 158 / 0.95) calc(var(--sweep) - 24deg),
+        transparent var(--sweep)
+      );
+      mask: radial-gradient(farthest-side, transparent calc(100% - 1.4px), #000 calc(100% - 1px));
+      transition: --sweep 0.5s ease-out;
+    }
+
+    label:hover input[data-swatch]:not(:checked) + .swatch-dot::after {
+      --sweep: 384deg;
+    }
+
+    /* Eases the selected ring in/out when the selection changes. */
+    .swatch-dot {
+      transition: box-shadow 0.35s ease;
+    }
+  }
+}

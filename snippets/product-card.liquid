@@ -1,0 +1,297 @@
+{%- comment -%}
+  Product card.
+
+  Accepts:
+  - product: {Product} required
+  - loading: {String} 'eager' | 'lazy' for the primary image (default 'lazy')
+
+  Adapts to the product's data: sale badge + markdown pricing only when the
+  selected variant is on sale; variant selectors only when the product has a
+  real option (color values from the swatch map render as circles, anything
+  else renders as a labeled chip); hover image only when one exists.
+
+  Hover (secondary) image resolution, per variant:
+  1. `variant.metafields.custom.hover_image` (file_reference — merchant-editable)
+  2. product media whose alt text is "<option value> secondary" (case-insensitive)
+  3. for option-less products: the product's second media
+{%- endcomment -%}
+
+{%- liquid
+  assign loading = loading | default: 'lazy'
+  assign sizes = '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw'
+  assign srcset_widths = '360,540,720,900,1000' | split: ','
+  assign selected_variant = product.selected_or_first_available_variant
+
+  assign selector_option = blank
+  for option in product.options_with_values
+    assign option_name = option.name | downcase
+    if option_name == 'color' or option_name == 'colour'
+      assign selector_option = option
+      break
+    endif
+  endfor
+  if selector_option == blank and product.has_only_default_variant == false
+    assign selector_option = product.options_with_values | first
+  endif
+
+  if selector_option != blank
+    assign option_index = selector_option.position | minus: 1
+    assign selected_value = selected_variant.options[option_index]
+  endif
+
+  assign card_url = selected_variant.url
+  if product.has_only_default_variant
+    assign card_url = product.url
+  endif
+
+  assign primary_media = selected_variant.featured_media | default: product.featured_media
+
+  assign secondary_media = selected_variant.metafields.custom.hover_image.value
+  if secondary_media == blank
+    if selector_option != blank
+      assign secondary_alt = selected_value | downcase | append: ' secondary'
+      for media in product.media
+        assign media_alt = media.alt | downcase
+        if media_alt == secondary_alt
+          assign secondary_media = media
+          break
+        endif
+      endfor
+    elsif product.media.size > 1
+      assign secondary_media = product.media[1]
+    endif
+  endif
+
+  assign on_sale = false
+  if selected_variant.compare_at_price > selected_variant.price
+    assign on_sale = true
+  endif
+
+  assign swatch_map = 'orange|#FF6633,green|#006600,blue|#00639C,yellow|#FCE78D,pink|#FFCCFF,navy|#19264B' | split: ','
+-%}
+
+{% # font-sans is set here (not inherited from body) because Skeleton's critical.css owns the body font %}
+<product-card class='flex w-full flex-col gap-[15px] font-sans'>
+  <div class='card-media relative aspect-[315/340] w-full overflow-hidden rounded-[10px] border border-line bg-white'>
+    <a href='{{ card_url }}' data-card-link tabindex='-1' aria-hidden='true' class='absolute inset-0 block'>
+      {%- if primary_media -%}
+        {%- assign primary_img = primary_media.preview_image -%}
+        {%- assign primary_alt = primary_media.alt | default: product.title -%}
+        <img
+          data-primary-image
+          src='{{ primary_img | image_url: width: 630 }}'
+          srcset='{% for width_string in srcset_widths %}{% assign width = width_string | plus: 0 %}{% if width <= primary_img.width %}{{ primary_img | image_url: width: width }} {{ width }}w{% unless forloop.last %}, {% endunless %}{% endif %}{% endfor %}'
+          sizes='{{ sizes }}'
+          width='{{ primary_img.width }}'
+          height='{{ primary_img.height }}'
+          alt='{{ primary_alt | escape }}'
+          loading='{{ loading }}'
+          {% if loading == 'eager' %}
+            fetchpriority='high'
+          {% endif %}
+          {% # Photos fill the whole box with object-contain (never cropped): square images span the full width, tall ones the full height, all centered. The photos' own whitespace provides the breathing room; the 5px inline padding matches the Figma card's inset. %}
+          class='absolute inset-0 size-full object-contain px-[5px]'
+        >
+      {%- else -%}
+        {{ 'product-1' | placeholder_svg_tag: 'absolute inset-0 size-full text-line' }}
+      {%- endif -%}
+      {%- if secondary_media != blank or selector_option != blank -%}
+        {%- liquid
+          assign secondary_img = secondary_media.preview_image | default: secondary_media
+          assign secondary_width = secondary_img.width | default: 800
+          assign secondary_height = secondary_img.height | default: 1000
+        -%}
+        <img
+          data-secondary-image
+          {% if secondary_media != blank %}
+            src='{{ secondary_img | image_url: width: 630 }}'
+            srcset='{% for width_string in srcset_widths %}{% assign width = width_string | plus: 0 %}{% if width <= secondary_img.width %}{{ secondary_img | image_url: width: width }} {{ width }}w{% unless forloop.last %}, {% endunless %}{% endif %}{% endfor %}'
+            sizes='{{ sizes }}'
+          {% else %}
+            hidden
+          {% endif %}
+          width='{{ secondary_width }}'
+          height='{{ secondary_height }}'
+          alt=''
+          aria-hidden='true'
+          loading='lazy'
+          class='absolute inset-0 size-full object-contain px-[5px]'
+        >
+      {%- endif -%}
+    </a>
+    {%- liquid
+      # Desktop badge calibrated against the Figma export pixel-by-pixel: Franklin Gothic ATF
+      # (Adobe-licensed, not shipped) renders 54×11px of text ink in a 91×29 pill; Libre Franklin 400
+      # at 15.3px + 15.1px x-padding reproduces those measurements. Tablet ≈ ×0.88, mobile ≈ ×0.78.
+      # The frosted background (white/75 + blur) is invisible over the white card but keeps the red
+      # legible if a photo ever extends under the badge.
+      assign badge_classes = 'absolute items-center rounded-full border border-sale bg-white/75 font-badge leading-none font-normal text-sale backdrop-blur-[2px] top-[14px] left-[14px] h-[23px] px-[11.8px] text-[12px] min-[480px]:top-[16px] min-[480px]:left-[16px] min-[480px]:h-[26px] min-[480px]:px-[13.3px] min-[480px]:text-[13.5px] lg:top-[19px] lg:left-[19px] lg:h-[29.45px] lg:px-[15.1px] lg:text-[15.3px]'
+      assign custom_badge = product.metafields.custom.badge.value
+    -%}
+    {%- if on_sale or selector_option != blank -%}
+      <span
+        data-badge
+        {% unless on_sale %}
+          hidden
+        {% endunless %}
+        class='inline-flex {{ badge_classes }}'
+      >
+        {{ 'products.card.on_sale' | t }}
+      </span>
+    {%- endif -%}
+    {%- if custom_badge != blank -%}
+      {% # Product-level label ("New", "Best Seller") from the custom.badge metafield. The sale badge wins while visible — a CSS sibling rule in theme.css hides this one. %}
+      <span data-badge-custom class='{{ badge_classes }}'>{{ custom_badge }}</span>
+    {%- endif -%}
+  </div>
+
+  <div class='flex w-full flex-col gap-[15px]'>
+    {%- if selector_option != blank -%}
+      {% # Negative margins offset the labels' hit-area padding so the visual row matches the 20px design while keeping 28px touch targets %}
+      <fieldset class='-mx-1 -my-1 flex flex-wrap items-center border-0 p-0'>
+        <legend class='sr-only'>{{ selector_option.name }}</legend>
+        {%- for value in selector_option.values -%}
+          {%- liquid
+            assign value_variant = blank
+            for variant in product.variants
+              if variant.options[option_index] == value
+                assign value_variant = variant
+                break
+              endif
+            endfor
+            assign value_key = value | downcase
+            assign swatch_color = ''
+            for pair in swatch_map
+              assign pair_parts = pair | split: '|'
+              if pair_parts[0] == value_key
+                assign swatch_color = pair_parts[1]
+                break
+              endif
+            endfor
+          -%}
+          {%- if value_variant != blank -%}
+            {%- if swatch_color != '' -%}
+              <label class='relative grid size-7 cursor-pointer place-items-center'>
+                <input
+                  type='radio'
+                  name='option-{{ section.id | default: 'grid' }}-{{ product.id }}'
+                  value='{{ value | escape }}'
+                  data-swatch
+                  {% if value == selected_value %}
+                    checked
+                  {% endif %}
+                  class='peer absolute inset-0 size-full cursor-pointer appearance-none rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+                >
+                <span
+                  aria-hidden='true'
+                  class='swatch-dot relative size-5 rounded-full peer-checked:ring-1 peer-checked:ring-accent peer-checked:ring-offset-1'
+                  style='background-color: {{ swatch_color }};'
+                ></span>
+                <span class='sr-only'>{{ value }}</span>
+              </label>
+            {%- else -%}
+              <label class='relative m-1 flex cursor-pointer'>
+                <input
+                  type='radio'
+                  name='option-{{ section.id | default: 'grid' }}-{{ product.id }}'
+                  value='{{ value | escape }}'
+                  data-swatch
+                  {% if value == selected_value %}
+                    checked
+                  {% endif %}
+                  class='peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[6px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+                >
+                <span
+                  class='flex h-7 items-center rounded-[6px] border border-line bg-white px-2.5 text-sm leading-4 text-ink peer-checked:border-accent peer-checked:text-accent peer-checked:ring-1 peer-checked:ring-accent'
+                >
+                  {{- value -}}
+                </span>
+              </label>
+            {%- endif -%}
+          {%- endif -%}
+        {%- endfor -%}
+      </fieldset>
+    {%- endif -%}
+
+    <div class='flex flex-col gap-1.5'>
+      {%- if product.vendor != blank -%}
+        <p class='text-sm leading-4 text-ink'>{{ product.vendor }}</p>
+      {%- endif -%}
+      <h3 class='line-clamp-2 text-base leading-[18px] font-medium text-accent'>
+        <a
+          href='{{ card_url }}'
+          data-card-link
+          class='card-title-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+        >
+          {{ product.title }}
+        </a>
+      </h3>
+      <p class='flex gap-2 text-sm leading-4' aria-live='polite'>
+        <span
+          data-price-compare
+          class='text-ink'
+          {% unless on_sale %}
+            hidden
+          {% endunless %}
+        >
+          <span class='sr-only'>{{ 'products.card.regular_price' | t }}&nbsp;</span>
+          <s data-price-compare-value>{{ selected_variant.compare_at_price | money }}</s>
+        </span>
+        <span data-price-current class='{% if on_sale %}text-sale{% else %}text-ink{% endif %}'>
+          <span
+            data-price-sale-label
+            class='sr-only'
+            {% unless on_sale %}
+              hidden
+            {% endunless %}
+          >
+            {{- 'products.card.sale_price' | t }}&nbsp;
+          </span>
+          <span data-price-current-value>{{ selected_variant.price | money }}</span>
+        </span>
+      </p>
+    </div>
+  </div>
+
+  {%- if selector_option != blank -%}
+    {%- assign payload_entries = '' -%}
+    {%- for value in selector_option.values -%}
+      {%- liquid
+        assign payload_variant = blank
+        for variant in product.variants
+          if variant.options[option_index] == value
+            assign payload_variant = variant
+            break
+          endif
+        endfor
+      -%}
+      {%- if payload_variant != blank -%}
+        {%- liquid
+          assign pv_primary = payload_variant.featured_media | default: product.featured_media
+          assign pv_secondary = payload_variant.metafields.custom.hover_image.value
+          if pv_secondary == blank
+            assign pv_secondary_alt = value | downcase | append: ' secondary'
+            for media in product.media
+              assign media_alt = media.alt | downcase
+              if media_alt == pv_secondary_alt
+                assign pv_secondary = media
+                break
+              endif
+            endfor
+          endif
+          assign pv_on_sale = false
+          if payload_variant.compare_at_price > payload_variant.price
+            assign pv_on_sale = true
+          endif
+        -%}
+        {%- capture entry -%}
+          {"id": {{ payload_variant.id }}, "value": {{ value | json }}, "available": {{ payload_variant.available }}, "onSale": {{ pv_on_sale }}, "price": {{ payload_variant.price | money | json }}, "compareAtPrice": {% if payload_variant.compare_at_price %}{{ payload_variant.compare_at_price | money | json }}{% else %}null{% endif %}, "url": {{ payload_variant.url | json }}, "primaryImage": {% render 'product-card-image-json', media: pv_primary, product: product %}, "secondaryImage": {% render 'product-card-image-json', media: pv_secondary, product: product %}}
+        {%- endcapture -%}
+        {%- assign payload_entries = payload_entries | append: entry | append: '@@SEP@@' -%}
+      {%- endif -%}
+    {%- endfor -%}
+    <script type='application/json' data-card-payload>
+      {"variants":[{{ payload_entries | split: '@@SEP@@' | join: ',' }}]}
+    </script>
+  {%- endif -%}
+</product-card>
