@@ -20,7 +20,7 @@
 {% if blog.comments_enabled? %}
   <h2>{{ 'blog.article_comments' | t }}</h2>
 
-  <div id="comments">
+  <div id='comments'>
     {% paginate article.comments by 10 %}
       {% for comment in article.comments %}
         <div>
@@ -42,21 +42,21 @@
     {{ form.errors | default_errors }}
 
     <div>
-      <label for="author">{{ 'blog.comment_form_name' | t }}</label>
-      <input type="text" name="comment[author]" id="author" value="{{ form.author }}" required>
+      <label for='author'>{{ 'blog.comment_form_name' | t }}</label>
+      <input type='text' name='comment[author]' id='author' value='{{ form.author }}' required>
     </div>
 
     <div>
-      <label for="email">{{ 'blog.comment_form_email' | t }}</label>
-      <input type="email" name="comment[email]" id="email" value="{{ form.email }}" required>
+      <label for='email'>{{ 'blog.comment_form_email' | t }}</label>
+      <input type='email' name='comment[email]' id='email' value='{{ form.email }}' required>
     </div>
 
     <div>
-      <label for="body">{{ 'blog.comment_form_body' | t }}</label>
-      <textarea name="comment[body]" id="body" required>{{ form.body }}</textarea>
+      <label for='body'>{{ 'blog.comment_form_body' | t }}</label>
+      <textarea name='comment[body]' id='body' required>{{ form.body }}</textarea>
     </div>
 
-    <input type="submit" value="{{ 'blog.comment_form_submit' | t }}">
+    <input type='submit' value='{{ 'blog.comment_form_submit' | t }}'>
   {% endform %}
 {% endif %}
 

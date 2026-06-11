@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ request.locale.iso_code }}">
+<html lang='{{ request.locale.iso_code }}'>
   <head>
     {% # Inlined CSS Variables %}
     {% render 'css-variables' %}
@@ -11,7 +11,7 @@
       3. Additional variants load on-demand via @font-face
     {% endcomment %}
     {% unless settings.type_primary_font.system? %}
-      <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+      <link rel='preconnect' href='https://fonts.shopifycdn.com' crossorigin>
 
       {% comment %} Preload the base font variant for initial page render {% endcomment %}
       {{ settings.type_primary_font | font_url | preload_tag: as: 'font', crossorigin: 'anonymous' }}

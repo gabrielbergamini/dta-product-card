@@ -1,6 +1,6 @@
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
 
 {%- liquid
   assign og_title = page_title | default: shop.name
@@ -18,71 +18,71 @@
 %}
 
 <meta
-  property="og:site_name"
-  content="{{ shop.name }}"
+  property='og:site_name'
+  content='{{ shop.name }}'
 >
 <meta
-  property="og:url"
-  content="{{ og_url }}"
+  property='og:url'
+  content='{{ og_url }}'
 >
 <meta
-  property="og:title"
-  content="{{ og_title | escape }}"
+  property='og:title'
+  content='{{ og_title | escape }}'
 >
 <meta
-  property="og:type"
-  content="{{ og_type }}"
+  property='og:type'
+  content='{{ og_type }}'
 >
 <meta
-  property="og:description"
-  content="{{ og_description | escape }}"
+  property='og:description'
+  content='{{ og_description | escape }}'
 >
 
 {%- if page_image -%}
   <meta
-    property="og:image"
-    content="http:{{ page_image | image_url }}"
+    property='og:image'
+    content='http:{{ page_image | image_url }}'
   >
   <meta
-    property="og:image:secure_url"
-    content="https:{{ page_image | image_url }}"
+    property='og:image:secure_url'
+    content='https:{{ page_image | image_url }}'
   >
   <meta
-    property="og:image:width"
-    content="{{ page_image.width }}"
+    property='og:image:width'
+    content='{{ page_image.width }}'
   >
   <meta
-    property="og:image:height"
-    content="{{ page_image.height }}"
+    property='og:image:height'
+    content='{{ page_image.height }}'
   >
 {%- endif -%}
 
 {%- if request.page_type == 'product' -%}
-  <script type="application/ld+json">
+  <script type='application/ld+json'>
     {{ product | structured_data }}
   </script>
 
   <meta
-    property="og:price:amount"
-    content="{{ product.price | money_without_currency | strip_html }}"
+    property='og:price:amount'
+    content='{{ product.price | money_without_currency | strip_html }}'
   >
   <meta
-    property="og:price:currency"
-    content="{{ cart.currency.iso_code }}"
+    property='og:price:currency'
+    content='{{ cart.currency.iso_code }}'
   >
 {%- endif -%}
 
 <meta
-  name="twitter:card"
-  content="summary_large_image"
+  name='twitter:card'
+  content='summary_large_image'
 >
 <meta
-  name="twitter:title"
-  content="{{ og_title | escape }}"
+  name='twitter:title'
+  content='{{ og_title | escape }}'
 >
 <meta
-  name="twitter:description"
-  content="{{ og_description | escape }}"
+  name='twitter:description'
+  content='{{ og_description | escape }}'
 >
 
 <title>
@@ -93,13 +93,13 @@
 </title>
 
 <link
-  rel="canonical"
-  href="{{ canonical_url }}"
+  rel='canonical'
+  href='{{ canonical_url }}'
 >
 
 {% if page_description %}
   <meta
-    name="description"
-    content="{{ page_description | escape }}"
+    name='description'
+    content='{{ page_description | escape }}'
   >
 {% endif %}

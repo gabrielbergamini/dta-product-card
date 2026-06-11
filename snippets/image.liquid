@@ -23,7 +23,7 @@
     url: product.url,
     width: 1200,
     height: 800,
-    crop: 'center',
+    crop: 'center'
   %}
 {% enddoc %}
 
@@ -40,9 +40,9 @@
 %}
 
 <{{ wrapper }}
-  class="image {{ class }}"
+  class='image {{ class }}'
   {% if url %}
-    href="{{ url }}"
+    href='{{ url }}'
   {% endif %}
 >
   {{ image | image_url: width: width, height: height, crop: crop | image_tag }}

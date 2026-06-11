@@ -7,7 +7,7 @@
 
 <h1>{{ 'cart.title' | t }}</h1>
 
-<form action="{{ routes.cart_url }}" method="post">
+<form action='{{ routes.cart_url }}' method='post'>
   <table>
     {% for item in cart.items %}
       <tr>
@@ -19,14 +19,14 @@
           {{ 'cart.remove' | t | link_to: item.url_to_remove }}
         </td>
         <td>
-          <input type="text" name="updates[]" value="{{ item.quantity }}">
-          <input type="submit" value="{{ 'cart.update' | t }}">
+          <input type='text' name='updates[]' value='{{ item.quantity }}'>
+          <input type='submit' value='{{ 'cart.update' | t }}'>
         </td>
       </tr>
     {% endfor %}
   </table>
 
-  <input type="submit" name="checkout" value="{{ 'cart.checkout' | t }}">
+  <input type='submit' name='checkout' value='{{ 'cart.checkout' | t }}'>
 </form>
 
 {% schema %}

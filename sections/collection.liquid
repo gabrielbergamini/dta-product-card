@@ -7,10 +7,10 @@
 
 <h1>{{ collection.title }}</h1>
 
-<div class="collection-products">
+<div class='collection-products'>
   {% paginate collection.products by 20 %}
     {% for product in collection.products %}
-      <div class="collection-product">
+      <div class='collection-product'>
         {% if product.featured_image %}
           {% render 'image',
             class: 'collection-product__image',
@@ -21,7 +21,7 @@
             crop: 'center'
           %}
         {% endif %}
-        <div class="collection-product__content">
+        <div class='collection-product__content'>
           <p>{{ product.title | escape | link_to: product.url }}</p>
           <p>{{ product.price | money }}</p>
         </div>

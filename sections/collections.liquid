@@ -8,11 +8,11 @@
 <h1>{{ 'collections.title' | t }}</h1>
 
 <div
-  class="collections {{ section.settings.grid_item_width }}"
-  style="--grid-gap: {{ section.settings.grid_gap }}px"
+  class='collections {{ section.settings.grid_item_width }}'
+  style='--grid-gap: {{ section.settings.grid_gap }}px'
 >
   {% for collection in collections %}
-    <a class="collection-card" href="{{ collection.url }}">
+    <a class='collection-card' href='{{ collection.url }}'>
       {% if collection.featured_image %}
         {% render 'image',
           class: 'collection-card__image',
@@ -23,7 +23,7 @@
         %}
       {% endif %}
 
-      <div class="collection-card__content">
+      <div class='collection-card__content'>
         <p>{{ collection.title }}</p>
 
         {% if collection.description %}
