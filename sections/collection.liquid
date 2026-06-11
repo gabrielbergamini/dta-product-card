@@ -1,41 +1,62 @@
 {% comment %}
-  This section is used in the collection template to render collection page
-  listing all products within a collection.
-
-  https://shopify.dev/docs/storefronts/themes/architecture/templates/collection
+  Collection page: renders the collection's products with the same product-card
+  grid used on the homepage, paginated.
 {% endcomment %}
 
-<h1>{{ collection.title }}</h1>
+<section class='mx-auto w-full max-w-[1360px] px-5 py-10 font-sans sm:py-14'>
+  <h1 class='mb-8 text-2xl font-medium text-ink'>{{ collection.title }}</h1>
 
-<div class='collection-products'>
-  {% paginate collection.products by 20 %}
-    {% for product in collection.products %}
-      <div class='collection-product'>
-        {% if product.featured_image %}
-          {% render 'image',
-            class: 'collection-product__image',
-            image: product.featured_image,
-            url: product.url,
-            width: 400,
-            height: 400,
-            crop: 'center'
-          %}
-        {% endif %}
-        <div class='collection-product__content'>
-          <p>{{ product.title | escape | link_to: product.url }}</p>
-          <p>{{ product.price | money }}</p>
-        </div>
-      </div>
-    {% endfor %}
+  {% paginate collection.products by 12 %}
+    <ul role='list' class='grid grid-cols-1 gap-x-5 gap-y-10 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+      {%- for product in collection.products -%}
+        {%- liquid
+          assign img_loading = 'lazy'
+          if forloop.index <= 4
+            assign img_loading = 'eager'
+          endif
+        -%}
+        <li class='flex'>
+          {% render 'product-card', product: product, loading: img_loading %}
+        </li>
+      {%- else -%}
+        <li class='col-span-full text-ink'>{{ 'sections.product_grid.empty' | t }}</li>
+      {%- endfor -%}
+    </ul>
 
-    {{ paginate | default_pagination }}
+    {%- if paginate.pages > 1 -%}
+      <nav class='collection-pagination mt-10 flex justify-center gap-2 text-sm text-ink' aria-label='Pagination'>
+        {{ paginate | default_pagination }}
+      </nav>
+    {%- endif -%}
   {% endpaginate %}
-</div>
+</section>
 
 {% stylesheet %}
-  .collection-products {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  .collection-pagination .page,
+  .collection-pagination .prev,
+  .collection-pagination .next,
+  .collection-pagination .current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+  }
+
+  .collection-pagination .current {
+    border: 1px solid #0a4874;
+    color: #0a4874;
+  }
+
+  .collection-pagination a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .collection-pagination a:hover {
+    border: 1px solid #e8e8e8;
   }
 {% endstylesheet %}
 
