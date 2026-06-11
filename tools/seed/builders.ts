@@ -8,8 +8,54 @@ export const PRODUCT = {
   handle: 'plain-t-shirt',
   vendor: 'Good Brand Company',
   price: '20.00',
-  compareAtPrice: '29.50'
+  compareAtPrice: '29.50',
+  // Apparel & Accessories > Clothing > Clothing Tops > T-Shirts. Required for the
+  // shopify.color-pattern linked option: that metafield is category-constrained,
+  // so a product without a taxonomy category can't link swatches at all.
+  categoryId: 'gid://shopify/TaxonomyCategory/aa-1-13-8'
 } as const;
+
+/** Figma design hexes, seeded into the standard color-pattern swatch metaobjects. */
+export const SWATCH_HEXES: Record<Color, string> = {
+  Orange: '#FF6633',
+  Green: '#006600',
+  Blue: '#00639C',
+  Yellow: '#FCE78D',
+  Pink: '#FFCCFF',
+  Navy: '#19264B'
+};
+
+/** Shopify's global product taxonomy "Color" attribute values (stable platform-wide
+ * ids) — the color-pattern metaobject requires a base-color taxonomy reference. */
+export const COLOR_TAXONOMY_VALUE_IDS: Record<Color, string> = {
+  Orange: 'gid://shopify/TaxonomyValue/10',
+  Green: 'gid://shopify/TaxonomyValue/9',
+  Blue: 'gid://shopify/TaxonomyValue/2',
+  Yellow: 'gid://shopify/TaxonomyValue/14',
+  Pink: 'gid://shopify/TaxonomyValue/11',
+  Navy: 'gid://shopify/TaxonomyValue/15'
+};
+
+/** Taxonomy "Pattern" attribute value "Solid" — required base pattern for swatches. */
+export const PATTERN_SOLID_TAXONOMY_VALUE_ID = 'gid://shopify/TaxonomyValue/2874';
+
+export interface SwatchEntry {
+  handle: string;
+  label: Color;
+  hex: string;
+  colorTaxonomyValueId: string;
+}
+
+/** One shopify--color-pattern metaobject per color: handle keyed by the
+ * downcased option value, color from the Figma palette. */
+export function buildSwatchEntries(): SwatchEntry[] {
+  return COLORS.map((color) => ({
+    handle: color.toLowerCase(),
+    label: color,
+    hex: SWATCH_HEXES[color],
+    colorTaxonomyValueId: COLOR_TAXONOMY_VALUE_IDS[color]
+  }));
+}
 
 export interface SeedFile {
   filename: string;

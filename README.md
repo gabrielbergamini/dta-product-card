@@ -22,9 +22,10 @@ JavaScript. It also embeds a small JSON payload per card. The `<product-card>` e
 is selected. If the payload is missing or malformed the element does nothing and the server-rendered card
 stays intact.
 
-Variant selectors adapt to the data: option values with a known color (the six from the design) render as
-circles, anything else renders as a labeled chip. Products with a single default variant get plain product
-URLs, no `?variant=` noise.
+Variant selectors adapt to the data: option values render as color circles when their option is linked to
+Shopify's native color swatches (the standard `shopify.color-pattern` taxonomy metafield — merchants pick
+the color in admin, the theme reads `value.swatch.color`), and as labeled chips otherwise. Products with a
+single default variant get plain product URLs, no `?variant=` noise.
 
 Hover images are merchant-editable: each variant has a pinned **Hover image** metafield
 (`custom.hover_image`, file picker in admin). If it's not set, the theme falls back to a product media whose

@@ -1,12 +1,19 @@
 /**
  * Seeds the "Plain T-shirt" product into the dev store via the Admin GraphQL API.
- * Idempotent: refuses to touch an existing product with the same handle.
+ * Idempotent: skips creation when the product exists, but always reconciles the
+ * native color swatches (standard color-pattern metaobjects + option link).
  *
  * Usage: npm run seed  (reads .env — see .env.example for the required token)
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { buildProductSetInput, buildSeedFiles, PRODUCT } from './builders';
+import {
+  buildProductSetInput,
+  buildSeedFiles,
+  buildSwatchEntries,
+  PATTERN_SOLID_TAXONOMY_VALUE_ID,
+  PRODUCT
+} from './builders';
 
 const API_VERSION = '2026-01';
 const ASSETS_DIR = path.join(import.meta.dirname, '..', '..', 'src', 'figma-assets');
@@ -279,21 +286,183 @@ async function assignHoverImages(productId: string): Promise<void> {
   console.log(`assigned hover images to ${metafields.length} variants`);
 }
 
-async function main(): Promise<void> {
-  const existing = await findExistingProduct();
-  if (existing) {
-    console.log(`"${PRODUCT.title}" already exists (${existing}). Delete it in admin to re-seed. Nothing changed.`);
+const COLOR_PATTERN_TYPE = 'shopify--color-pattern';
+
+/** Sets the product's taxonomy category (T-Shirts). The shopify.color-pattern
+ * metafield is category-constrained — without a category the option link is
+ * rejected with INVALID_METAFIELD_VALUE_FOR_LINKED_OPTION. */
+async function ensureProductCategory(productId: string): Promise<void> {
+  const data = await admin<{
+    productUpdate: { product: { id: string } | null; userErrors: UserError[] };
+  }>(
+    `mutation ($product: ProductUpdateInput!) {
+      productUpdate(product: $product) {
+        product { id }
+        userErrors { field message }
+      }
+    }`,
+    { product: { id: productId, category: PRODUCT.categoryId } }
+  );
+  assertNoUserErrors('productUpdate(category)', data.productUpdate.userErrors);
+  console.log('set product taxonomy category (T-Shirts)');
+}
+
+/** Enables the standard shopify.color-pattern metafield definition on products —
+ * the metafield behind the admin's native option-value swatches. Enabling it also
+ * provisions the shopify--color-pattern metaobject definition. Tolerates it
+ * already being enabled. */
+async function ensureColorPatternDefinition(): Promise<void> {
+  const templates = await admin<{
+    standardMetafieldDefinitionTemplates: { nodes: { id: string; namespace: string; key: string }[] };
+  }>(
+    `query {
+      standardMetafieldDefinitionTemplates(first: 250) {
+        nodes { id namespace key }
+      }
+    }`
+  );
+  const template = templates.standardMetafieldDefinitionTemplates.nodes.find(
+    (node) => node.namespace === 'shopify' && node.key === 'color-pattern'
+  );
+  if (!template) throw new Error('no standard metafield template for shopify.color-pattern');
+
+  const data = await admin<{
+    standardMetafieldDefinitionEnable: {
+      createdDefinition: { id: string } | null;
+      userErrors: (UserError & { code?: string })[];
+    };
+  }>(
+    `mutation ($id: ID!) {
+      standardMetafieldDefinitionEnable(id: $id, ownerType: PRODUCT) {
+        createdDefinition { id }
+        userErrors { field message code }
+      }
+    }`,
+    { id: template.id }
+  );
+  const errors = data.standardMetafieldDefinitionEnable.userErrors;
+  if (errors.length > 0 && !errors.every((error) => error.code === 'TAKEN')) {
+    throw new Error(`standardMetafieldDefinitionEnable userErrors: ${JSON.stringify(errors, null, 2)}`);
+  }
+  console.log(errors.length > 0 ? 'color-pattern definition already enabled' : 'enabled color-pattern definition');
+}
+
+/** Upserts one color-pattern metaobject per design color: label, Figma hex, and
+ * the required base color/pattern taxonomy references. Returns metaobject ids
+ * keyed by handle for the option-value linking step. */
+async function upsertSwatchMetaobjects(): Promise<Map<string, string>> {
+  const ids = new Map<string, string>();
+  for (const entry of buildSwatchEntries()) {
+    const data = await admin<{
+      metaobjectUpsert: { metaobject: { id: string; handle: string } | null; userErrors: UserError[] };
+    }>(
+      `mutation ($handle: MetaobjectHandleInput!, $metaobject: MetaobjectUpsertInput!) {
+        metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
+          metaobject { id handle }
+          userErrors { field message }
+        }
+      }`,
+      {
+        handle: { type: COLOR_PATTERN_TYPE, handle: entry.handle },
+        metaobject: {
+          fields: [
+            { key: 'label', value: entry.label },
+            { key: 'color', value: entry.hex },
+            { key: 'color_taxonomy_reference', value: JSON.stringify([entry.colorTaxonomyValueId]) },
+            { key: 'pattern_taxonomy_reference', value: PATTERN_SOLID_TAXONOMY_VALUE_ID }
+          ]
+        }
+      }
+    );
+    assertNoUserErrors(`metaobjectUpsert(${entry.handle})`, data.metaobjectUpsert.userErrors);
+    const metaobject = data.metaobjectUpsert.metaobject;
+    if (!metaobject) throw new Error(`metaobjectUpsert(${entry.handle}) returned no metaobject`);
+    ids.set(metaobject.handle, metaobject.id);
+  }
+  console.log(`upserted ${ids.size} swatch metaobjects`);
+  return ids;
+}
+
+/** Links the product's Color option to the standard color-pattern metafield so
+ * each option value carries its swatch (admin shows a native color picker). */
+async function linkColorOptionToSwatches(productId: string, swatchIds: Map<string, string>): Promise<void> {
+  const data = await admin<{
+    product: {
+      options: {
+        id: string;
+        name: string;
+        linkedMetafield: { namespace: string; key: string } | null;
+        optionValues: { id: string; name: string }[];
+      }[];
+    };
+  }>(
+    `query ($id: ID!) {
+      product(id: $id) {
+        options {
+          id
+          name
+          linkedMetafield { namespace key }
+          optionValues { id name }
+        }
+      }
+    }`,
+    { id: productId }
+  );
+
+  const option = data.product.options.find((candidate) => candidate.name.toLowerCase() === 'color');
+  if (!option) throw new Error('product has no Color option to link');
+  if (option.linkedMetafield?.key === 'color-pattern') {
+    console.log('Color option already linked to color-pattern swatches');
     return;
   }
-  console.log('uploading images…');
-  const uploads = await stageAndUploadAll();
-  console.log('creating product…');
-  const productId = await createProduct(uploads);
-  console.log(`created ${productId}`);
-  await publishEverywhere(productId);
-  await ensureHoverImageDefinition();
-  await ensureBadgeDefinition();
-  await assignHoverImages(productId);
+
+  const optionValuesToUpdate = option.optionValues.map((value) => {
+    const metaobjectId = swatchIds.get(value.name.toLowerCase());
+    if (!metaobjectId) throw new Error(`no swatch metaobject for option value "${value.name}"`);
+    return { id: value.id, linkedMetafieldValue: metaobjectId };
+  });
+
+  const result = await admin<{
+    productOptionUpdate: { userErrors: (UserError & { code?: string })[] };
+  }>(
+    `mutation ($productId: ID!, $option: OptionUpdateInput!, $optionValuesToUpdate: [OptionValueUpdateInput!]) {
+      productOptionUpdate(
+        productId: $productId
+        option: $option
+        optionValuesToUpdate: $optionValuesToUpdate
+      ) {
+        userErrors { field message code }
+      }
+    }`,
+    {
+      productId,
+      option: { id: option.id, linkedMetafield: { namespace: 'shopify', key: 'color-pattern' } },
+      optionValuesToUpdate
+    }
+  );
+  assertNoUserErrors('productOptionUpdate', result.productOptionUpdate.userErrors);
+  console.log(`linked Color option (${optionValuesToUpdate.length} values) to color-pattern swatches`);
+}
+
+async function main(): Promise<void> {
+  let productId = await findExistingProduct();
+  if (productId) {
+    console.log(`"${PRODUCT.title}" already exists (${productId}) — reconciling swatches only.`);
+  } else {
+    console.log('uploading images…');
+    const uploads = await stageAndUploadAll();
+    console.log('creating product…');
+    productId = await createProduct(uploads);
+    console.log(`created ${productId}`);
+    await publishEverywhere(productId);
+    await ensureHoverImageDefinition();
+    await ensureBadgeDefinition();
+    await assignHoverImages(productId);
+  }
+  await ensureProductCategory(productId);
+  await ensureColorPatternDefinition();
+  const swatchIds = await upsertSwatchMetaobjects();
+  await linkColorOptionToSwatches(productId, swatchIds);
   console.log(`done — https://${STORE}/products/${PRODUCT.handle}`);
 }
 

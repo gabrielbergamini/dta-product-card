@@ -7,8 +7,9 @@
 
   Adapts to the product's data: sale badge + markdown pricing only when the
   selected variant is on sale; variant selectors only when the product has a
-  real option (color values from the swatch map render as circles, anything
-  else renders as a labeled chip); hover image only when one exists.
+  real option (option values whose admin swatch defines a color — native
+  color-pattern taxonomy metaobjects — render as circles, anything else
+  renders as a labeled chip); hover image only when one exists.
 
   Hover (secondary) image resolution, per variant:
   1. `variant.metafields.custom.hover_image` (file_reference — merchant-editable)
@@ -66,8 +67,6 @@
   if selected_variant.compare_at_price > selected_variant.price
     assign on_sale = true
   endif
-
-  assign swatch_map = 'orange|#FF6633,green|#006600,blue|#00639C,yellow|#FCE78D,pink|#FFCCFF,navy|#19264B' | split: ','
 -%}
 
 {% # font-sans is set here (not inherited from body) because Skeleton's critical.css owns the body font %}
@@ -159,18 +158,15 @@
                 break
               endif
             endfor
-            assign value_key = value | downcase
-            assign swatch_color = ''
-            for pair in swatch_map
-              assign pair_parts = pair | split: '|'
-              if pair_parts[0] == value_key
-                assign swatch_color = pair_parts[1]
-                break
-              endif
-            endfor
+            comment
+              Native swatch: the option value's admin-managed color-pattern
+              metaobject (set when the option is linked to shopify.color-pattern).
+              No swatch (or an image-only one) falls back to the labeled chip.
+            endcomment
+            assign swatch_color = value.swatch.color
           -%}
           {%- if value_variant != blank -%}
-            {%- if swatch_color != '' -%}
+            {%- if swatch_color -%}
               <label class='relative grid size-7 cursor-pointer place-items-center'>
                 <input
                   type='radio'

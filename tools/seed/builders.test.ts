@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { buildProductSetInput, buildSeedFiles, COLORS, PRODUCT } from './builders';
+import { buildProductSetInput, buildSeedFiles, buildSwatchEntries, COLORS, PRODUCT } from './builders';
+
+describe('buildSwatchEntries', () => {
+  it('maps every color to a metaobject handle, label, Figma hex and taxonomy value', () => {
+    const entries = buildSwatchEntries();
+    expect(entries).toHaveLength(COLORS.length);
+    expect(entries).toContainEqual({
+      handle: 'blue',
+      label: 'Blue',
+      hex: '#00639C',
+      colorTaxonomyValueId: 'gid://shopify/TaxonomyValue/2'
+    });
+    for (const entry of entries) {
+      expect(entry.handle).toBe(entry.label.toLowerCase());
+      expect(entry.hex).toMatch(/^#[0-9A-F]{6}$/);
+      expect(entry.colorTaxonomyValueId).toMatch(/^gid:\/\/shopify\/TaxonomyValue\/\d+$/);
+    }
+  });
+});
 
 describe('buildSeedFiles', () => {
   it('produces a primary and secondary file per color with the alt convention', () => {
