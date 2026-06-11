@@ -1,0 +1,25 @@
+# This file contains a list of files that will be excluded from Shopify CLI
+# operations such as push, pull, dev, etc.
+#
+# Examples:
+#
+# Ignore a specific file:
+#   templates/product.json
+#
+# Ignore templates with a wildcard pattern:
+#   templates/*.json
+#
+# Ignore templates and sections with a regular expression:
+#   /(templates|sections)/.*\.json/
+
+# Editor/tool temp files (atomic-write artifacts)
+*.tmp.*
+# sed -i scratch files (no dot in name, so *.tmp.* misses them)
+snippets/sed*
+sections/sed*
+layout/sed*
+locales/sed*
+templates/sed*
+config/sed*
+blocks/sed*
+assets/sed*

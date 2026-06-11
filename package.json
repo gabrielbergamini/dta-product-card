@@ -1,0 +1,48 @@
+{
+  "name": "dta-product-card",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n vite,shopify \"vite build --watch\" \"npm run -s dev:theme\"",
+    "dev:theme": "node --env-file=.env --import tsx tools/theme-dev.ts",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{liquid,css,json,md}\"",
+    "format:check": "prettier --check \"**/*.{liquid,css,json,md}\"",
+    "check:theme": "shopify theme check",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run check:theme",
+    "seed": "node --env-file=.env --import tsx tools/seed/seed.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,js}": "eslint --fix",
+    "*.{liquid,css,json,md}": "prettier --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@shopify/prettier-plugin-liquid": "^1.10.3",
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/node": "^25.9.2",
+    "concurrently": "^10.0.3",
+    "eslint": "^10.4.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.8.4",
+    "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.0",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
+  }
+}

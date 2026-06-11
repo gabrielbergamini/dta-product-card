@@ -1,0 +1,8 @@
+# Generated files — owned by their generators, not by Prettier
+assets/
+package-lock.json
+node_modules/
+docs/
+.shopify/
+AGENTS.md
+CLAUDE.md
