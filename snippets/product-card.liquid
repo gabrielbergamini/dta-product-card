@@ -142,6 +142,18 @@
       {% # Product-level label ("New", "Best Seller") from the custom.badge metafield. The sale badge wins while visible — a CSS sibling rule in theme.css hides this one. %}
       <span data-badge-custom class='{{ badge_classes }}'>{{ custom_badge }}</span>
     {%- endif -%}
+    {%- if secondary_media != blank or selector_option != blank -%}
+      <span
+        data-image-pagination
+        aria-hidden='true'
+        {% if secondary_media == blank %}
+          hidden
+        {% endif %}
+      >
+        <span data-image-dot='primary'></span>
+        <span data-image-dot='secondary'></span>
+      </span>
+    {%- endif -%}
   </div>
 
   <div class='flex w-full flex-col gap-[15px]'>

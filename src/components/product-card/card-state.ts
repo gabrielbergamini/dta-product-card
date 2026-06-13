@@ -50,6 +50,30 @@ export function findVariantByValue(payload: CardPayload, value: string): CardVar
   return payload.variants.find((variant) => variant.value === value);
 }
 
+export type GestureAxis = 'pending' | 'horizontal' | 'vertical';
+export type ImageView = 0 | 1;
+
+const GESTURE_SLOP_PX = 8;
+const SWIPE_THRESHOLD_RATIO = 0.15;
+
+export function gestureAxis(deltaX: number, deltaY: number): GestureAxis {
+  if (Math.hypot(deltaX, deltaY) < GESTURE_SLOP_PX) return 'pending';
+  return Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+}
+
+export function swipeProgress(startView: ImageView, deltaX: number, width: number): number {
+  if (width <= 0) return startView;
+  return Math.max(0, Math.min(1, startView - deltaX / width));
+}
+
+export function swipeDestination(startView: ImageView, deltaX: number, width: number): ImageView {
+  if (width <= 0) return startView;
+  const threshold = width * SWIPE_THRESHOLD_RATIO;
+  if (startView === 0 && deltaX <= -threshold) return 1;
+  if (startView === 1 && deltaX >= threshold) return 0;
+  return startView;
+}
+
 /** Angle (conic-gradient convention: 0deg = top, clockwise) from an element's
  * center to the pointer position. Drives the entry-aware hover effects:
  * sweeps start opposite this angle and close into it. */

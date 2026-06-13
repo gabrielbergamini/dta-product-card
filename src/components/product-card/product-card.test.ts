@@ -1,6 +1,19 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { CardPayload } from '../../types/product';
 
+class TestPointerEvent extends MouseEvent {
+  readonly isPrimary: boolean;
+  readonly pointerId: number;
+  readonly pointerType: string;
+
+  constructor(type: string, init: PointerEventInit = {}) {
+    super(type, init);
+    this.isPrimary = init.isPrimary ?? true;
+    this.pointerId = init.pointerId ?? 1;
+    this.pointerType = init.pointerType ?? 'touch';
+  }
+}
+
 function payloadFixture(): CardPayload {
   return {
     variants: [
@@ -40,6 +53,10 @@ function mount(payloadJson: string): HTMLElement {
           <img data-secondary-image src="orange-2.jpg" srcset="orange-2.jpg 360w" width="800" height="1000" alt="" aria-hidden="true">
         </a>
         <span data-badge>On Sale!</span>
+        <span data-image-pagination hidden aria-hidden="true">
+          <span data-image-dot="primary"></span>
+          <span data-image-dot="secondary"></span>
+        </span>
       </div>
       <fieldset>
         <legend>Color</legend>
@@ -65,7 +82,39 @@ function selectColor(card: HTMLElement, color: string): void {
   radio.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+function mediaFor(card: HTMLElement): HTMLElement {
+  const media = card.querySelector<HTMLElement>('.card-media');
+  if (!media) throw new Error('missing card media');
+  media.getBoundingClientRect = () => ({
+    x: 0,
+    y: 0,
+    left: 0,
+    top: 0,
+    right: 300,
+    bottom: 340,
+    width: 300,
+    height: 340,
+    toJSON: () => ({})
+  });
+  return media;
+}
+
+function pointer(target: Element, type: string, clientX: number, clientY: number): boolean {
+  return target.dispatchEvent(
+    new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 7,
+      pointerType: 'touch',
+      button: 0,
+      clientX,
+      clientY
+    })
+  );
+}
+
 beforeAll(async () => {
+  Object.defineProperty(globalThis, 'PointerEvent', { configurable: true, value: TestPointerEvent });
   await import('./product-card');
 });
 
@@ -123,5 +172,99 @@ describe('<product-card>', () => {
     radio.value = 'Chartreuse';
     selectColor(card, 'Chartreuse');
     expect(card.querySelector<HTMLImageElement>('[data-primary-image]')?.getAttribute('src')).toBe('orange.jpg');
+  });
+
+  it('previews and commits the secondary image after a left swipe', () => {
+    const card = mount(JSON.stringify(payloadFixture()));
+    const media = mediaFor(card);
+
+    pointer(media, 'pointerdown', 240, 120);
+    pointer(media, 'pointermove', 165, 124);
+
+    expect(media.dataset['swipeDragging']).toBe('');
+    expect(Number(media.style.getPropertyValue('--image-swipe-progress'))).toBeCloseTo(0.25);
+
+    pointer(media, 'pointerup', 165, 124);
+
+    expect(media.dataset['imageView']).toBe('secondary');
+    expect(media.style.getPropertyValue('--image-swipe-progress')).toBe('1');
+    expect(media.hasAttribute('data-swipe-dragging')).toBe(false);
+
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const link = media.querySelector('a');
+    expect(link?.dispatchEvent(click)).toBe(false);
+    expect(click.defaultPrevented).toBe(true);
+  });
+
+  it('leaves vertical movement to page scrolling without suppressing taps', () => {
+    const card = mount(JSON.stringify(payloadFixture()));
+    const media = mediaFor(card);
+
+    pointer(media, 'pointerdown', 200, 100);
+    pointer(media, 'pointermove', 205, 180);
+    pointer(media, 'pointerup', 205, 180);
+
+    expect(media.dataset['imageView']).toBe('primary');
+    expect(media.style.getPropertyValue('--image-swipe-progress')).toBe('0');
+
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const link = media.querySelector('a');
+    expect(link?.dispatchEvent(click)).toBe(true);
+    expect(click.defaultPrevented).toBe(false);
+  });
+
+  it('swipes right to restore the primary image', () => {
+    const card = mount(JSON.stringify(payloadFixture()));
+    const media = mediaFor(card);
+
+    pointer(media, 'pointerdown', 240, 120);
+    pointer(media, 'pointermove', 165, 120);
+    pointer(media, 'pointerup', 165, 120);
+    pointer(media, 'pointerdown', 80, 120);
+    pointer(media, 'pointermove', 155, 120);
+    pointer(media, 'pointerup', 155, 120);
+
+    expect(media.dataset['imageView']).toBe('primary');
+    expect(media.style.getPropertyValue('--image-swipe-progress')).toBe('0');
+  });
+
+  it('keeps the secondary view when the newly selected variant also has a secondary image', () => {
+    const payload = payloadFixture();
+    payload.variants[1] = {
+      ...payload.variants[1]!,
+      secondaryImage: { src: 'navy-2.jpg', srcset: 'navy-2.jpg 360w', width: 800, height: 1000, alt: '' }
+    };
+    const card = mount(JSON.stringify(payload));
+    const media = mediaFor(card);
+
+    pointer(media, 'pointerdown', 240, 120);
+    pointer(media, 'pointermove', 165, 120);
+    pointer(media, 'pointerup', 165, 120);
+    expect(media.dataset['imageView']).toBe('secondary');
+
+    selectColor(card, 'Navy');
+
+    // View stays on secondary; progress never dips toward primary (no glitch).
+    expect(media.dataset['imageView']).toBe('secondary');
+    expect(media.style.getPropertyValue('--image-swipe-progress')).toBe('1');
+    const primary = card.querySelector<HTMLImageElement>('[data-primary-image]');
+    const secondary = card.querySelector<HTMLImageElement>('[data-secondary-image]');
+    expect(primary?.getAttribute('src')).toBe('navy.jpg');
+    expect(secondary?.getAttribute('src')).toBe('navy-2.jpg');
+    expect(secondary?.hidden).toBe(false);
+  });
+
+  it('resets to primary and disables swipe when the selected variant has no secondary image', () => {
+    const card = mount(JSON.stringify(payloadFixture()));
+    const media = mediaFor(card);
+
+    pointer(media, 'pointerdown', 240, 120);
+    pointer(media, 'pointermove', 165, 120);
+    pointer(media, 'pointerup', 165, 120);
+    selectColor(card, 'Navy');
+
+    expect(media.dataset['imageView']).toBe('primary');
+    expect(media.hasAttribute('data-swipe-enabled')).toBe(false);
+    expect(card.querySelector<HTMLElement>('[data-image-pagination]')?.hidden).toBe(true);
   });
 });

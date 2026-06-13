@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CardPayload } from '../../types/product';
-import { entryAngle, findVariantByValue, parseCardPayload } from './card-state';
+import {
+  entryAngle,
+  findVariantByValue,
+  gestureAxis,
+  parseCardPayload,
+  swipeDestination,
+  swipeProgress
+} from './card-state';
 
 const image = {
   src: '//cdn/orange.jpg',
@@ -70,6 +77,28 @@ describe('entryAngle', () => {
     expect(entryAngle(rect, 100, 50)).toBe(90); // from the right
     expect(entryAngle(rect, 50, 100)).toBe(180); // from the bottom
     expect(entryAngle(rect, 0, 50)).toBe(270); // from the left
+  });
+});
+
+describe('mobile image swipe', () => {
+  it('locks only after the pointer clears the movement slop', () => {
+    expect(gestureAxis(5, 2)).toBe('pending');
+    expect(gestureAxis(-12, 3)).toBe('horizontal');
+    expect(gestureAxis(3, 12)).toBe('vertical');
+  });
+
+  it('maps horizontal drag distance to clamped image progress', () => {
+    expect(swipeProgress(0, -75, 300)).toBe(0.25);
+    expect(swipeProgress(1, 75, 300)).toBe(0.75);
+    expect(swipeProgress(0, -400, 300)).toBe(1);
+    expect(swipeProgress(1, 400, 300)).toBe(0);
+  });
+
+  it('commits only after crossing 15% of the media width', () => {
+    expect(swipeDestination(0, -44, 300)).toBe(0);
+    expect(swipeDestination(0, -45, 300)).toBe(1);
+    expect(swipeDestination(1, 44, 300)).toBe(1);
+    expect(swipeDestination(1, 45, 300)).toBe(0);
   });
 });
 

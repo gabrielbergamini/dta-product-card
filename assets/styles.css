@@ -335,18 +335,82 @@
     opacity: 0;
   }
 
+  .card-media[data-swipe-enabled] {
+    touch-action: pan-y;
+  }
+
+  @media (hover: none), (pointer: coarse), (any-pointer: coarse) {
+    .card-media[data-swipe-enabled] [data-primary-image] {
+      opacity: calc(1 - var(--image-swipe-progress, 0));
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .card-media[data-swipe-enabled] [data-secondary-image]:not([hidden]) {
+      opacity: var(--image-swipe-progress, 0);
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  }
+
+  .card-media[data-swipe-dragging] [data-primary-image], .card-media[data-swipe-dragging] [data-secondary-image] {
+    transition: none;
+  }
+
+  [data-image-pagination] {
+    z-index: 1;
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    pointer-events: none;
+    background: #ffffffbf;
+    border: 1px solid #e8e8e8cc;
+    border-radius: 9999px;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 7px;
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 1px 4px #11111114;
+  }
+
+  [data-image-dot] {
+    background: #11111159;
+    border-radius: 9999px;
+    width: 5px;
+    height: 5px;
+    transition: width .18s, background-color .18s;
+  }
+
+  .card-media[data-image-view="primary"] [data-image-dot="primary"], .card-media[data-image-view="secondary"] [data-image-dot="secondary"] {
+    background: var(--color-accent);
+    width: 12px;
+  }
+
+  @media (hover: none), (pointer: coarse), (any-pointer: coarse) {
+    [data-image-pagination]:not([hidden]) {
+      display: flex;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    [data-primary-image], [data-secondary-image] {
+    [data-primary-image], [data-secondary-image], [data-image-dot] {
       transition: none;
     }
   }
 
-  product-card:hover .card-media:has([data-secondary-image]:not([hidden])) [data-primary-image] {
-    opacity: 0;
-  }
+  @media (hover: hover) and (pointer: fine) {
+    product-card:hover .card-media:has([data-secondary-image]:not([hidden])) [data-primary-image] {
+      opacity: 0;
+    }
 
-  product-card:hover [data-secondary-image]:not([hidden]) {
-    opacity: 1;
+    product-card:hover .card-media [data-secondary-image]:not([hidden]) {
+      opacity: 1;
+    }
   }
 
   [data-badge-custom] {
