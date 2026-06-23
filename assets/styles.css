@@ -2,6 +2,9 @@
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
     *, :before, :after, ::backdrop {
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
       --tw-rotate-x: initial;
       --tw-rotate-y: initial;
       --tw-rotate-z: initial;
@@ -46,7 +49,13 @@
       --tw-backdrop-opacity: initial;
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
+      --tw-duration: initial;
+      --tw-ease: initial;
+      --tw-content: "";
       --tw-outline-style: solid;
+      --tw-pan-x: initial;
+      --tw-pan-y: initial;
+      --tw-pinch-zoom: initial;
       --sweep: 0deg;
     }
   }
@@ -67,6 +76,7 @@
     --text-2xl--line-height: calc(2 / 1.5);
     --font-weight-normal: 400;
     --font-weight-medium: 500;
+    --ease-out: cubic-bezier(0, 0, .2, 1);
     --default-transition-duration: .15s;
     --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
     --default-font-family: var(--font-sans);
@@ -326,147 +336,13 @@
   }
 }
 
-@layer components {
-  [data-primary-image], [data-secondary-image] {
-    transition: opacity .2s;
-  }
-
-  [data-secondary-image] {
-    opacity: 0;
-  }
-
-  .card-media[data-swipe-enabled] {
-    touch-action: pan-y;
-  }
-
-  @media (hover: none), (pointer: coarse), (any-pointer: coarse) {
-    .card-media[data-swipe-enabled] [data-primary-image] {
-      opacity: calc(1 - var(--image-swipe-progress, 0));
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-    }
-
-    .card-media[data-swipe-enabled] [data-secondary-image]:not([hidden]) {
-      opacity: var(--image-swipe-progress, 0);
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-    }
-  }
-
-  .card-media[data-swipe-dragging] [data-primary-image], .card-media[data-swipe-dragging] [data-secondary-image] {
-    transition: none;
-  }
-
-  [data-image-pagination] {
-    z-index: 1;
-    -webkit-backdrop-filter: blur(3px);
-    backdrop-filter: blur(3px);
-    pointer-events: none;
-    background: #ffffffbf;
-    border: 1px solid #e8e8e8cc;
-    border-radius: 9999px;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 7px;
-    display: none;
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    box-shadow: 0 1px 4px #11111114;
-  }
-
-  [data-image-dot] {
-    background: #11111159;
-    border-radius: 9999px;
-    width: 5px;
-    height: 5px;
-    transition: width .18s, background-color .18s;
-  }
-
-  .card-media[data-image-view="primary"] [data-image-dot="primary"], .card-media[data-image-view="secondary"] [data-image-dot="secondary"] {
-    background: var(--color-accent);
-    width: 12px;
-  }
-
-  @media (hover: none), (pointer: coarse), (any-pointer: coarse) {
-    [data-image-pagination]:not([hidden]) {
-      display: flex;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-primary-image], [data-secondary-image], [data-image-dot] {
-      transition: none;
-    }
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    product-card:hover .card-media:has([data-secondary-image]:not([hidden])) [data-primary-image] {
-      opacity: 0;
-    }
-
-    product-card:hover .card-media [data-secondary-image]:not([hidden]) {
-      opacity: 1;
-    }
-  }
-
-  [data-badge-custom] {
-    display: inline-flex;
-  }
-
-  [data-badge]:not([hidden]) ~ [data-badge-custom] {
-    display: none;
-  }
-
-  .card-title-link {
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
-    background-image: linear-gradient(currentColor, currentColor);
-    background-position: 100% 100%;
-    background-repeat: no-repeat;
-    background-size: 0% 1px;
-    transition: background-size .3s;
-  }
-
-  .card-title-link:hover {
-    background-position: 0 100%;
-    background-size: 100% 1px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .card-title-link {
-      transition: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .swatch-dot:after {
-      content: "";
-      pointer-events: none;
-      --sweep: 0deg;
-      background: conic-gradient(from var(--enter, 0deg), #8a929ef2 0deg, #8a929ef2 calc(var(--sweep) - 24deg), transparent var(--sweep));
-      border-radius: 9999px;
-      transition: --sweep .5s ease-out;
-      position: absolute;
-      inset: -2px;
-      -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 1.4px), #000 calc(100% - 1px));
-      mask: radial-gradient(farthest-side, #0000 calc(100% - 1.4px), #000 calc(100% - 1px));
-    }
-
-    label:hover input[data-swatch]:not(:checked) + .swatch-dot:after {
-      --sweep: 384deg;
-    }
-
-    .swatch-dot {
-      transition: box-shadow .35s;
-    }
-  }
-}
+@layer components;
 
 @layer utilities {
+  .pointer-events-none {
+    pointer-events: none;
+  }
+
   .invisible {
     visibility: hidden;
   }
@@ -511,8 +387,20 @@
     top: 14px;
   }
 
+  .bottom-\[10px\] {
+    bottom: 10px;
+  }
+
+  .left-1\/2 {
+    left: 50%;
+  }
+
   .left-\[14px\] {
     left: 14px;
+  }
+
+  .z-\[1\] {
+    z-index: 1;
   }
 
   .col-span-full {
@@ -592,6 +480,11 @@
     height: calc(var(--spacing) * 7);
   }
 
+  .size-\[5px\] {
+    width: 5px;
+    height: 5px;
+  }
+
   .size-full {
     width: 100%;
     height: 100%;
@@ -611,6 +504,11 @@
 
   .max-w-\[1360px\] {
     max-width: 1360px;
+  }
+
+  .-translate-x-1\/2 {
+    --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
+    translate: var(--tw-translate-x) var(--tw-translate-y);
   }
 
   .transform {
@@ -647,6 +545,10 @@
 
   .justify-center {
     justify-content: center;
+  }
+
+  .gap-1 {
+    gap: calc(var(--spacing) * 1);
   }
 
   .gap-1\.5 {
@@ -699,8 +601,28 @@
     border-color: var(--color-line);
   }
 
+  .border-line\/80 {
+    border-color: #e8e8e8cc;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-line\/80 {
+      border-color: color-mix(in oklab, var(--color-line) 80%, transparent);
+    }
+  }
+
   .border-sale {
     border-color: var(--color-sale);
+  }
+
+  .bg-ink\/35 {
+    background-color: #11111159;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-ink\/35 {
+      background-color: color-mix(in oklab, var(--color-ink) 35%, transparent);
+    }
   }
 
   .bg-white {
@@ -715,6 +637,27 @@
     .bg-white\/75 {
       background-color: color-mix(in oklab, var(--color-white) 75%, transparent);
     }
+  }
+
+  .bg-\[linear-gradient\(currentColor\,currentColor\)\] {
+    background-image: linear-gradient(currentColor, currentColor);
+  }
+
+  .box-decoration-clone {
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .bg-\[length\:0\%_1px\] {
+    background-size: 0% 1px;
+  }
+
+  .bg-\[position\:100\%_100\%\] {
+    background-position: 100% 100%;
+  }
+
+  .bg-no-repeat {
+    background-repeat: no-repeat;
   }
 
   .object-contain {
@@ -737,12 +680,20 @@
     padding-inline: 5px;
   }
 
+  .px-\[7px\] {
+    padding-inline: 7px;
+  }
+
   .px-\[11\.8px\] {
     padding-inline: 11.8px;
   }
 
   .py-10 {
     padding-block: calc(var(--spacing) * 10);
+  }
+
+  .py-\[5px\] {
+    padding-block: 5px;
   }
 
   .font-badge {
@@ -817,6 +768,19 @@
     font-style: italic;
   }
 
+  .opacity-0 {
+    opacity: 0;
+  }
+
+  .opacity-100 {
+    opacity: 1;
+  }
+
+  .shadow-\[0_1px_4px_rgb\(17_17_17\/0\.08\)\] {
+    --tw-shadow: 0 1px 4px var(--tw-shadow-color, #11111114);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
   .ring {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -832,10 +796,74 @@
     backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
   }
 
+  .backdrop-blur-\[3px\] {
+    --tw-backdrop-blur: blur(3px);
+    -webkit-backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+    backdrop-filter: var(--tw-backdrop-blur, ) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  }
+
   .transition {
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .transition-\[background-size\] {
+    transition-property: background-size;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .transition-\[width\,background-color\] {
+    transition-property: width, background-color;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .transition-opacity {
+    transition-property: opacity;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+
+  .duration-200 {
+    --tw-duration: .2s;
+    transition-duration: .2s;
+  }
+
+  .duration-300 {
+    --tw-duration: .3s;
+    transition-duration: .3s;
+  }
+
+  .duration-\[180ms\] {
+    --tw-duration: .18s;
+    transition-duration: .18s;
+  }
+
+  .ease-\[ease\] {
+    --tw-ease: ease;
+    transition-timing-function: ease;
+  }
+
+  .group-data-\[image-view\=primary\]\/media\:w-\[12px\]:is(:where(.group\/media)[data-image-view="primary"] *) {
+    width: 12px;
+  }
+
+  .group-data-\[image-view\=primary\]\/media\:bg-accent:is(:where(.group\/media)[data-image-view="primary"] *) {
+    background-color: var(--color-accent);
+  }
+
+  .group-data-\[image-view\=secondary\]\/media\:w-\[12px\]:is(:where(.group\/media)[data-image-view="secondary"] *) {
+    width: 12px;
+  }
+
+  .group-data-\[image-view\=secondary\]\/media\:bg-accent:is(:where(.group\/media)[data-image-view="secondary"] *) {
+    background-color: var(--color-accent);
+  }
+
+  .group-data-\[swipe-dragging\]\/media\:transition-none:is(:where(.group\/media)[data-swipe-dragging] *) {
+    transition-property: none;
   }
 
   .peer-checked\:border-accent:is(:where(.peer):checked ~ *) {
@@ -860,6 +888,25 @@
     --tw-ring-offset-shadow: var(--tw-ring-inset, ) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   }
 
+  .peer-\[\:not\(\[hidden\]\)\]\:hidden:is(:where(.peer):not([hidden]) ~ *) {
+    display: none;
+  }
+
+  .after\:content-\[\'\'\]:after {
+    --tw-content: "";
+    content: var(--tw-content);
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[length\:100\%_1px\]:hover {
+      background-size: 100% 1px;
+    }
+
+    .hover\:bg-\[position\:0\%_100\%\]:hover {
+      background-position: 0 100%;
+    }
+  }
+
   .focus-visible\:outline-2:focus-visible {
     outline-style: var(--tw-outline-style);
     outline-width: 2px;
@@ -871,6 +918,102 @@
 
   .focus-visible\:outline-accent:focus-visible {
     outline-color: var(--color-accent);
+  }
+
+  .data-\[swipe-enabled\]\:touch-pan-y[data-swipe-enabled] {
+    --tw-pan-y: pan-y;
+    touch-action: var(--tw-pan-x, ) var(--tw-pan-y, ) var(--tw-pinch-zoom, );
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .motion-safe\:transition-\[box-shadow\] {
+      transition-property: box-shadow;
+      transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+      transition-duration: var(--tw-duration, var(--default-transition-duration));
+    }
+
+    .motion-safe\:duration-\[350ms\] {
+      --tw-duration: .35s;
+      transition-duration: .35s;
+    }
+
+    .motion-safe\:ease-\[ease\] {
+      --tw-ease: ease;
+      transition-timing-function: ease;
+    }
+
+    .motion-safe\:after\:pointer-events-none:after {
+      content: var(--tw-content);
+      pointer-events: none;
+    }
+
+    .motion-safe\:after\:absolute:after {
+      content: var(--tw-content);
+      position: absolute;
+    }
+
+    .motion-safe\:after\:inset-\[-2px\]:after {
+      content: var(--tw-content);
+      inset: -2px;
+    }
+
+    .motion-safe\:after\:rounded-full:after {
+      content: var(--tw-content);
+      border-radius: 3.40282e38px;
+    }
+
+    .motion-safe\:after\:transition-\[--sweep\]:after {
+      content: var(--tw-content);
+      transition-property: --sweep;
+      transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+      transition-duration: var(--tw-duration, var(--default-transition-duration));
+    }
+
+    .motion-safe\:after\:duration-500:after {
+      content: var(--tw-content);
+      --tw-duration: .5s;
+      transition-duration: .5s;
+    }
+
+    .motion-safe\:after\:ease-out:after {
+      content: var(--tw-content);
+      --tw-ease: var(--ease-out);
+      transition-timing-function: var(--ease-out);
+    }
+
+    .motion-safe\:after\:content-\[\'\'\]:after {
+      --tw-content: "";
+      content: var(--tw-content);
+    }
+
+    .motion-safe\:after\:\[--sweep\:0deg\]:after {
+      content: var(--tw-content);
+      --sweep: 0deg;
+    }
+
+    .motion-safe\:after\:\[background\:conic-gradient\(from_var\(--enter\,0deg\)\,rgb\(138_146_158\/0\.95\)_0deg\,rgb\(138_146_158\/0\.95\)_calc\(var\(--sweep\)_-_24deg\)\,transparent_var\(--sweep\)\)\]:after {
+      content: var(--tw-content);
+      background: conic-gradient(from var(--enter, 0deg),#8a929ef2 0deg,#8a929ef2 calc(var(--sweep) - 24deg),transparent var(--sweep));
+    }
+
+    .motion-safe\:after\:\[mask\:radial-gradient\(farthest-side\,transparent_calc\(100\%_-_1\.4px\)\,\#000_calc\(100\%_-_1px\)\)\]:after {
+      content: var(--tw-content);
+      -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 1.4px), #000 calc(100% - 1px));
+      mask: radial-gradient(farthest-side, #0000 calc(100% - 1.4px), #000 calc(100% - 1px));
+    }
+
+    @media (hover: hover) {
+      .motion-safe\:group-hover\/swatch\:peer-\[\:not\(\:checked\)\]\:after\:\[--sweep\:384deg\]:is(:where(.group\/swatch):hover *):is(:where(.peer):not(:checked) ~ *):after {
+        content: var(--tw-content);
+        --sweep: 384deg;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-reduce\:transition-none {
+      transition-property: none;
+    }
   }
 
   @media (min-width: 480px) {
@@ -938,12 +1081,115 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+
+  @media (pointer: coarse) {
+    .pointer-coarse\:group-data-\[swipe-enabled\]\/media\:opacity-\[calc\(1_-_var\(--image-swipe-progress\,0\)\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: calc(1 - var(--image-swipe-progress, 0));
+    }
+
+    .pointer-coarse\:group-data-\[swipe-enabled\]\/media\:opacity-\[var\(--image-swipe-progress\,0\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: var(--image-swipe-progress, 0);
+    }
+
+    .pointer-coarse\:group-data-\[swipe-enabled\]\/media\:select-none:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .pointer-coarse\:group-data-\[swipe-enabled\]\/media\:\[-webkit-user-drag\:none\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-drag: none;
+    }
+  }
+
+  @media (pointer: fine) {
+    @media (hover: hover) {
+      .pointer-fine\:group-hover\/card\:opacity-100:is(:where(.group\/card):hover *) {
+        opacity: 1;
+      }
+
+      .pointer-fine\:group-has-\[\[data-secondary-image\]\:not\(\[hidden\]\)\]\/card\:group-hover\/card\:opacity-0:is(:where(.group\/card):has([data-secondary-image]:not([hidden])) *):is(:where(.group\/card):hover *) {
+        opacity: 0;
+      }
+    }
+  }
+
+  @media (any-pointer: coarse) {
+    .any-pointer-coarse\:group-data-\[swipe-enabled\]\/media\:opacity-\[calc\(1_-_var\(--image-swipe-progress\,0\)\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: calc(1 - var(--image-swipe-progress, 0));
+    }
+
+    .any-pointer-coarse\:group-data-\[swipe-enabled\]\/media\:opacity-\[var\(--image-swipe-progress\,0\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: var(--image-swipe-progress, 0);
+    }
+
+    .any-pointer-coarse\:group-data-\[swipe-enabled\]\/media\:select-none:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .any-pointer-coarse\:group-data-\[swipe-enabled\]\/media\:\[-webkit-user-drag\:none\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-drag: none;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .pointer-coarse\:\[\&\:not\(\[hidden\]\)\]\:flex:not([hidden]) {
+      display: flex;
+    }
+  }
+
+  @media (any-pointer: coarse) {
+    .any-pointer-coarse\:\[\&\:not\(\[hidden\]\)\]\:flex:not([hidden]) {
+      display: flex;
+    }
+  }
+
+  @media (hover: none) {
+    .\[\@media\(hover\:none\)\]\:group-data-\[swipe-enabled\]\/media\:opacity-\[calc\(1_-_var\(--image-swipe-progress\,0\)\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: calc(1 - var(--image-swipe-progress, 0));
+    }
+
+    .\[\@media\(hover\:none\)\]\:group-data-\[swipe-enabled\]\/media\:opacity-\[var\(--image-swipe-progress\,0\)\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      opacity: var(--image-swipe-progress, 0);
+    }
+
+    .\[\@media\(hover\:none\)\]\:group-data-\[swipe-enabled\]\/media\:select-none:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .\[\@media\(hover\:none\)\]\:group-data-\[swipe-enabled\]\/media\:\[-webkit-user-drag\:none\]:is(:where(.group\/media)[data-swipe-enabled] *) {
+      -webkit-user-drag: none;
+    }
+
+    .\[\@media\(hover\:none\)\]\:\[\&\:not\(\[hidden\]\)\]\:flex:not([hidden]) {
+      display: flex;
+    }
+  }
 }
 
 @property --sweep {
   syntax: "<angle>";
   inherits: false;
   initial-value: 0deg;
+}
+
+@property --tw-translate-x {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-translate-z {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
 }
 
 @property --tw-rotate-x {
@@ -1177,8 +1423,39 @@
   inherits: false
 }
 
+@property --tw-duration {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ease {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-content {
+  syntax: "*";
+  inherits: false;
+  initial-value: "";
+}
+
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+
+@property --tw-pan-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-pan-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-pinch-zoom {
+  syntax: "*";
+  inherits: false
 }
